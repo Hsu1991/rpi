@@ -29,14 +29,14 @@
 
 // Location of peripheral registers in physical memory
 //#define PHYS_REG_BASE  0x20000000  // Pi Zero or 1
-#define PHYS_REG_BASE    0x3F000000  // Pi 2 or 3
-//#define PHYS_REG_BASE  0xFE000000  // Pi 4
+// #define PHYS_REG_BASE    0x3F000000  // Pi 2 or 3
+#define PHYS_REG_BASE  0xFE000000  // Pi 4
 
 // Location of peripheral registers in bus memory
 #define BUS_REG_BASE    0x7E000000
 
 // If non-zero, print debug information
-#define DEBUG           0
+#define DEBUG           1
 
 // Output pin to use for LED
 //#define LED_PIN         47    // Pi Zero onboard LED
@@ -63,7 +63,7 @@
 #define GPIO_SET0       0x1c
 #define GPIO_CLR0       0x28
 #define GPIO_LEV0       0x34
-#define VIRT_GPIO_REG(a) ((uint32_t *)((uint32_t)virt_gpio_regs + (a)))
+#define VIRT_GPIO_REG(a) ((uint32_t *)((uint64_t)virt_gpio_regs + (a)))
 #define BUS_GPIO_REG(a) (GPIO_BASE-PHYS_REG_BASE+BUS_REG_BASE+(uint32_t)(a))
 #define GPIO_IN         0
 #define GPIO_OUT        1
@@ -80,7 +80,7 @@ int mbox_fd, dma_mem_h;
 void *bus_dma_mem;
 
 // Convert memory bus address to physical address (for mmap)
-#define BUS_PHYS_ADDR(a) ((void *)((uint32_t)(a)&~0xC0000000))
+#define BUS_PHYS_ADDR(a) ((void *)((uint64_t)(a)&~0xC0000000))
 
 // Videocore mailbox memory allocation flags, see:
 //     https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface
@@ -121,7 +121,7 @@ typedef struct {
 #define DMA_NEXTCONBK   (DMA_CHAN*0x100 + 0x1c)
 #define DMA_DEBUG       (DMA_CHAN*0x100 + 0x20)
 #define DMA_ENABLE      0xff0
-#define VIRT_DMA_REG(a) ((volatile uint32_t *)((uint32_t)virt_dma_regs + a))
+#define VIRT_DMA_REG(a) ((volatile uint32_t *)((uint64_t)virt_dma_regs + a))
 char *dma_regstrs[] = {"DMA CS", "CB_AD", "TI", "SRCE_AD", "DEST_AD",
     "TFR_LEN", "STRIDE", "NEXT_CB", "DEBUG", ""};
 
@@ -143,7 +143,7 @@ typedef struct {
 void *virt_dma_mem;
 
 // Convert virtual DMA data address to a bus address
-#define BUS_DMA_MEM(a)  ((uint32_t)a-(uint32_t)virt_dma_mem+(uint32_t)bus_dma_mem)
+#define BUS_DMA_MEM(a)  ((uint64_t)a-(uint64_t)virt_dma_mem+(uint64_t)bus_dma_mem)
 
 // PWM controller
 #define PWM_BASE        (PHYS_REG_BASE + 0x20C000)
@@ -155,7 +155,7 @@ void *virt_dma_mem;
 #define PWM_FIF1        0x18   // Channel 1 fifo
 #define PWM_RNG2        0x20   // Channel 2 range
 #define PWM_DAT2        0x24   // Channel 2 data
-#define VIRT_PWM_REG(a) ((volatile uint32_t *)((uint32_t)virt_pwm_regs + (a)))
+#define VIRT_PWM_REG(a) ((volatile uint32_t *)((uint64_t)virt_pwm_regs + (a)))
 #define BUS_PWM_REG(a)  (PWM_BASE-PHYS_REG_BASE+BUS_REG_BASE+(uint32_t)(a))
 #define PWM_CTL_RPTL1   (1<<2)  // Chan 1: repeat last data when FIFO empty
 #define PWM_CTL_USEF1   (1<<5)  // Chan 1: use FIFO
@@ -169,7 +169,7 @@ void *virt_clk_regs;
 #define CLK_BASE        (PHYS_REG_BASE + 0x101000)
 #define CLK_PWM_CTL     0xa0
 #define CLK_PWM_DIV     0xa4
-#define VIRT_CLK_REG(a) ((volatile uint32_t *)((uint32_t)virt_clk_regs + (a)))
+#define VIRT_CLK_REG(a) ((volatile uint32_t *)((uint64_t)virt_clk_regs + (a)))
 #define CLK_PASSWD      0x5a000000
 #define CLOCK_KHZ       250000
 #define PWM_CLOCK_ID    0xa
@@ -469,7 +469,11 @@ void unmap_segment(void *mem, int size)
 // Enable and reset DMA
 void enable_dma(void)
 {
-    *VIRT_DMA_REG(DMA_ENABLE) |= (1 << DMA_CHAN);
+    // *VIRT_DMA_REG(DMA_ENABLE) |= (1 << DMA_CHAN);
+    volatile uint32_t *test = (volatile uint32_t *)((uint64_t)virt_dma_regs + DMA_ENABLE);
+    printf("test: %d\n", *test);
+    *test |= (1 << DMA_CHAN);
+    // *((volatile uint32_t *)((uint64_t)virt_dma_regs + DMA_ENABLE)) |= (1 << DMA_CHAN);
     *VIRT_DMA_REG(DMA_CS) = 1 << 31;
 }
 
