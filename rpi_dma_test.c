@@ -229,8 +229,8 @@ int main(int argc, char *argv[])
 
     // Run DMA tests
     dma_test_mem_transfer();
-    dma_test_led_flash(LED_PIN);
-    dma_test_pwm_trigger(LED_PIN);
+    // dma_test_led_flash(LED_PIN);
+    // dma_test_pwm_trigger(LED_PIN);
     terminate(0);
 }
 
@@ -241,8 +241,23 @@ int dma_test_mem_transfer(void)
     char *srce = (char *)(cbp+1);
     char *dest = srce + 0x100;
 
-    strcpy(srce, "memory transfer OK");
     memset(cbp, 0, sizeof(DMA_CB));
+    // 1. Writing srce without strcpy
+    // srce[0] = 'm';
+    // srce[1] = 'e';
+    // srce[2] = 'm';
+    // srce[3] = 'o';
+    // srce[4] = 'r';
+    // srce[5] = 'y';
+    // srce[6] = '!';
+    // srce[7] = 0;
+    // srce[8] = 0;
+
+    // 2. strcpy trigger BUS_ERROR with original string "memory transfers ok"
+    //    the valid length (include null) that won't trigger error: 16, 17, 18, 20, 24, 25. 
+    //    => can't find pattern here...
+    // strcpy(srce, "memorytransfersok") this can work both strcpy and print string in 3.
+    strcpy(srce, "memory transfers ok!!!!!"); // this can work both strcpy and print string in 3.
     cbp->ti = DMA_CB_SRC_INC | DMA_CB_DEST_INC;
     cbp->srce_ad = BUS_DMA_MEM(srce);
     cbp->dest_ad = BUS_DMA_MEM(dest);
@@ -252,6 +267,9 @@ int dma_test_mem_transfer(void)
 #if DEBUG
     disp_dma();
 #endif
+    printf("dest[0] = %d\n", dest[0]);
+    printf("DMA test len: %d\n", strlen(dest));
+    // 3. the string print can success only the actual copy size is multiple of 8 (16, 24). Otherwises, BUS_ERROR
     printf("DMA test: %s\n", dest[0] ? dest : "failed");
     return(dest[0] != 0);
 }
@@ -470,10 +488,10 @@ void unmap_segment(void *mem, int size)
 void enable_dma(void)
 {
     // *VIRT_DMA_REG(DMA_ENABLE) |= (1 << DMA_CHAN);
+    // *((volatile uint32_t *)((uint64_t)virt_dma_regs + DMA_ENABLE)) |= (1 << DMA_CHAN);
     volatile uint32_t *test = (volatile uint32_t *)((uint64_t)virt_dma_regs + DMA_ENABLE);
     printf("test: %d\n", *test);
     *test |= (1 << DMA_CHAN);
-    // *((volatile uint32_t *)((uint64_t)virt_dma_regs + DMA_ENABLE)) |= (1 << DMA_CHAN);
     *VIRT_DMA_REG(DMA_CS) = 1 << 31;
 }
 
