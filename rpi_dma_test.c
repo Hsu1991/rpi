@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 
     // Run DMA tests
     dma_test_mem_transfer();
-    // dma_test_led_flash(LED_PIN);
+    dma_test_led_flash(LED_PIN);
     // dma_test_pwm_trigger(LED_PIN);
     terminate(0);
 }
@@ -257,7 +257,8 @@ int dma_test_mem_transfer(void)
     //    the valid length (include null) that won't trigger error: 16, 17, 18, 20, 24, 25. 
     //    => can't find pattern here...
     // strcpy(srce, "memorytransfersok") this can work both strcpy and print string in 3.
-    strcpy(srce, "memory transfers ok!!!!!"); // this can work both strcpy and print string in 3.
+    strcpy(srce, "memorytransferso"); // this can work both strcpy and print string in 3.
+    // strcpy(srce, "memory transfer ok"); // no go
     cbp->ti = DMA_CB_SRC_INC | DMA_CB_DEST_INC;
     cbp->srce_ad = BUS_DMA_MEM(srce);
     cbp->dest_ad = BUS_DMA_MEM(dest);
